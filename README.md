@@ -1,0 +1,8 @@
+# Udacity Projects for my Cloud DevOps Engineer Nanodegree program
+
+## Projects list:
+1. [Project 1 - Deploy Static Website on AWS](Project_1/README.md).
+1. TBD
+1. TBD
+1. TBD
+1. TBD
