@@ -6,10 +6,13 @@
 * Udacity Project 2.jpeg -- > Architecture of the project
 
 ### CloudFormation Stacks:
-* Project 2 stacks.jpg -- > stacks created from my account
+* Udacity Project 2 stacks.jpg -- > stacks created from my account
+
+### Servers Stack Outputs:
+* Udacity Project 2 Outputs.jpg -- > screenshot of CloudFormation servers stack outputs
 
 ### Web Browser Access:
-* Udacity Project 2 URL.jpeg -- > screenshot of the working website
+* Udacity Project 2 URL.jpg -- > screenshot of the working website
 
 
 ## List of CloudFormation Scripts:
@@ -30,3 +33,11 @@
 ## Web Browser Access:
 
 URL:	http://udacityproject2-webapp-lb-1583356175.us-west-2.elb.amazonaws.com
+
+
+## Notes:
+* Bastion Hosts are created in public subnets to provide access to servers in private subnets if needed
+* I know that KeyName should be removed, I kept it so bastion hosts make sense
+* URL output is added to provide nice http://URL
+* I used AWS Parameter Store  for sensitive data
+

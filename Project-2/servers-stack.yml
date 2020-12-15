@@ -35,6 +35,9 @@ Parameters:
     WebAppVolSize:
         Description: EC2 Vloume Size for WebApp instances
         Type: String
+    WebAppGroupSize:
+        Description: number of instaces inside WebApp AutoScalingGroup
+        Type: String
 
 Resources:
 
@@ -158,8 +161,8 @@ Resources:
                 - Fn::ImportValue: !Sub "${EnvironmentName}-PRIV-NETS"
             LaunchConfigurationName: !Ref WebAppLaunchConfig
             MinSize: "1"
-            MaxSize: "2"
-            DesiredCapacity: "2"
+            MaxSize: !Ref WebAppGroupSize
+            DesiredCapacity: !Ref WebAppGroupSize
             TargetGroupARNs:
                 - Ref: WebAppTargetGroup
             Tags:
