@@ -1,0 +1,238 @@
+Description: >
+    Mostafa Ahmed / Udacity
+    This template deploys the below:
+        WebApp LaunchConfiguration
+        WebApp security group
+        WebApp AutoScaling Group
+        WebApp LB , listener , listener rule , target group
+        LB security group
+        BastionHost security group
+        BastionHosts 1 and 2 creation
+
+
+Parameters:
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+    MyIp:
+        Description: My changing ip
+        Type: String
+    WebAppHostIamProfile:
+        Description: EC2 IAM Instance profile name
+        Type: String
+    BastionHostImageId:
+        Description: EC2 Instance ID for BastionHost
+        Type: String
+    BastionHostInstanceType:
+        Description: EC2 Instance Type for BastionHost
+        Type: String
+    WebAppImageId:
+        Description: EC2 Instance ID for WebApp instances
+        Type: String
+    WebAppInstanceType:
+        Description: EC2 Instance Type for WebApp instances
+        Type: String
+    WebAppVolSize:
+        Description: EC2 Vloume Size for WebApp instances
+        Type: String
+
+Resources:
+
+    BastionHostSecGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupName: !Sub ${EnvironmentName}-bastion-host-security-group
+            GroupDescription: Allow ssh to our private subnet and from our IP only
+            VpcId:
+                Fn::ImportValue: !Sub "${EnvironmentName}-VPCID"
+            SecurityGroupIngress:
+                - IpProtocol: tcp
+                  FromPort: 22
+                  ToPort: 22
+                  CidrIp: !Ref MyIp
+
+    LBSecGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupName: !Sub ${EnvironmentName}-LB-security-group
+            GroupDescription: Allow http to our load balancer
+            VpcId:
+                Fn::ImportValue: !Sub "${EnvironmentName}-VPCID"
+            SecurityGroupIngress:
+                - IpProtocol: tcp
+                  FromPort: 80
+                  ToPort: 80
+                  CidrIp: 0.0.0.0/0
+            SecurityGroupEgress:
+                - IpProtocol: tcp
+                  FromPort: 80
+                  ToPort: 80
+                  CidrIp: 0.0.0.0/0    
+
+    WebAppSecGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupName: !Sub ${EnvironmentName}-WebApp-security-group
+            GroupDescription: Allow http from ANY and SSH from our IP only
+            VpcId:
+                Fn::ImportValue: !Sub "${EnvironmentName}-VPCID"
+            SecurityGroupIngress:
+                - IpProtocol: tcp
+                  FromPort: 22
+                  ToPort: 22
+                  CidrIp: 0.0.0.0/0
+                - IpProtocol: tcp
+                  FromPort: 80
+                  ToPort: 80
+                  CidrIp: 0.0.0.0/0
+            SecurityGroupEgress:
+                - IpProtocol: tcp
+                  FromPort: 0
+                  ToPort: 65535
+                  CidrIp: 0.0.0.0/0
+
+    BastionHost1:
+        Type: AWS::EC2::Instance
+        Properties:
+            ImageId: !Ref BastionHostImageId
+            InstanceType: !Ref BastionHostInstanceType
+            KeyName: "{{resolve:ssm:bastion-key:1}}"
+            NetworkInterfaces:
+                - AssociatePublicIpAddress: "true"
+                  DeviceIndex: "0"
+                  GroupSet:
+                      - !Ref BastionHostSecGroup
+                  SubnetId:
+                      Fn::ImportValue: !Sub "${EnvironmentName}-PUB1-SN"
+            Tags:
+                - Key: Name
+                  Value: !Sub ${EnvironmentName} Bastion Host (AZ1)
+
+    BastionHost2:
+        Type: AWS::EC2::Instance
+        Properties:
+            ImageId: !Ref BastionHostImageId
+            InstanceType: !Ref BastionHostInstanceType
+            KeyName: "{{resolve:ssm:bastion-key:1}}"
+            NetworkInterfaces:
+                - AssociatePublicIpAddress: "true"
+                  DeviceIndex: "0"
+                  GroupSet:
+                      - !Ref BastionHostSecGroup
+                  SubnetId:
+                      Fn::ImportValue: !Sub "${EnvironmentName}-PUB2-SN"
+            Tags:
+                - Key: Name
+                  Value: !Sub ${EnvironmentName} Bastion Host (AZ2)
+
+    WebAppLaunchConfig:
+        Type: AWS::AutoScaling::LaunchConfiguration
+        Properties:
+            LaunchConfigurationName: !Sub ${EnvironmentName}-WebApp-launch-template
+            UserData:
+                Fn::Base64: !Sub |
+                    #!/bin/bash
+                    apt-get update -y
+                    apt-get install unzip awscli -y
+                    apt-get install apache2 -y
+                    systemctl start apache2.service
+                    cd /var/www/html
+                    aws s3 cp s3://udacity-website-mostafaahmed/udacity-starter-website.zip .
+                    unzip -o udacity-starter-website.zip
+            ImageId: !Ref WebAppImageId
+            KeyName: "{{resolve:ssm:webapp-key:1}}" # Should be removed, I kept it so bastion hosts make sense
+            SecurityGroups:
+                - Ref: WebAppSecGroup
+            InstanceType: !Ref WebAppInstanceType
+            IamInstanceProfile: !Ref WebAppHostIamProfile
+            BlockDeviceMappings:
+                - DeviceName: "/dev/sda1"
+                  Ebs:
+                      VolumeSize: !Ref WebAppVolSize
+
+    WebAppGroup:
+        Type: AWS::AutoScaling::AutoScalingGroup
+        Properties:
+            AutoScalingGroupName: !Sub ${EnvironmentName}-WebApp-AG
+            VPCZoneIdentifier:
+                - Fn::ImportValue: !Sub "${EnvironmentName}-PRIV-NETS"
+            LaunchConfigurationName: !Ref WebAppLaunchConfig
+            MinSize: "1"
+            MaxSize: "2"
+            DesiredCapacity: "2"
+            TargetGroupARNs:
+                - Ref: WebAppTargetGroup
+            Tags:
+                - Key: Name
+                  Value: !Sub ${EnvironmentName} WebApp AG
+                  PropagateAtLaunch: true
+
+    WebAppLB:
+        Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+        Properties:
+            Name: !Sub "${EnvironmentName}-WebApp-LB"
+            Subnets:
+                - Fn::ImportValue: !Sub "${EnvironmentName}-PUB1-SN"
+                - Fn::ImportValue: !Sub "${EnvironmentName}-PUB2-SN"
+            SecurityGroups:
+                - Ref: LBSecGroup
+            Tags:
+                - Key: Name
+                  Value: !Sub ${EnvironmentName} WebApp LB
+
+    Listener:
+        Type: AWS::ElasticLoadBalancingV2::Listener
+        Properties:
+            DefaultActions:
+                - Type: forward
+                  TargetGroupArn: !Ref WebAppTargetGroup
+            LoadBalancerArn: !Ref WebAppLB
+            Port: '80'
+            Protocol: HTTP
+
+    ALBListenerRule:
+        Type: AWS::ElasticLoadBalancingV2::ListenerRule
+        Properties:
+            Actions:
+                - Type: forward
+                  TargetGroupArn: !Ref 'WebAppTargetGroup'
+            Conditions:
+                - Field: path-pattern
+                  Values: [/]
+            ListenerArn: !Ref 'Listener'
+            Priority: 1
+
+    WebAppTargetGroup:
+        Type: AWS::ElasticLoadBalancingV2::TargetGroup
+        Properties:
+            Name: !Sub ${EnvironmentName}-WebApp-TG
+            HealthCheckIntervalSeconds: 10
+            HealthCheckPath: /
+            HealthCheckProtocol: HTTP
+            HealthCheckTimeoutSeconds: 8
+            HealthyThresholdCount: 2
+            Port: 80
+            Protocol: HTTP
+            UnhealthyThresholdCount: 5
+            VpcId: 
+                Fn::ImportValue: !Sub "${EnvironmentName}-VPCID"
+
+Outputs:
+
+    BastionHost1:
+        Description: Public DNS name of BastionHost1
+        Value: !GetAtt BastionHost1.PublicDnsName
+        Export:
+            Name: !Sub ${EnvironmentName}-BastionHost1-DNS-name    
+
+    BastionHost2:
+        Description: Public DNS name of BastionHost2
+        Value: !GetAtt BastionHost2.PublicDnsName
+        Export:
+            Name: !Sub ${EnvironmentName}-BastionHost2-DNS-name    
+
+    URL:
+        Description: A reference to URL of our WebApp
+        Value: !Sub http://${WebAppLB.DNSName}
+        Export:
+            Name: !Sub ${EnvironmentName}-WebApp-LB-URL

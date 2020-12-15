@@ -1,0 +1,34 @@
+[
+	{
+		"ParameterKey": "EnvironmentName",
+		"ParameterValue": "UdacityProject2"
+	}
+	,{
+		"ParameterKey": "MyIp",
+		"ParameterValue": "{{resolve:ssm:my-home-ip:3}}"
+	}
+	,{
+		"ParameterKey": "WebAppHostIamProfile",
+		"ParameterValue": "{{resolve:ssm:ec2-iam-s3-read:1}}"
+	}
+	,{
+		"ParameterKey": "BastionHostImageId",
+		"ParameterValue": "ami-0e472933a1395e172"
+	}
+	,{
+		"ParameterKey": "BastionHostInstanceType",
+		"ParameterValue": "t2.micro"
+	}
+	,{
+		"ParameterKey": "WebAppImageId",
+		"ParameterValue": "ami-0ac73f33a1888c64a"
+	}
+	,{
+		"ParameterKey": "WebAppInstanceType",
+		"ParameterValue": "t3.small"
+	}
+	,{
+		"ParameterKey": "WebAppVolSize",
+		"ParameterValue": "10"
+	}
+]
