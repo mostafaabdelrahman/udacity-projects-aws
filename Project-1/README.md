@@ -25,3 +25,7 @@ CloudFront has been configure to retrieve and distribute website files:
 * Website_screenshot.jpg
 
 CloudFront endpoint URL for the website:	http://udacity-website-mostafaahmed.s3.us-east-2.amazonaws.com/index.html
+
+
+## Test CircleCI status badge
+[![mostafaabdelrahman](https://circleci.com/gh/mostafaabdelrahman/udacity-aws-project03.svg?style=svg)](https://https://circleci.com/gh/mostafaabdelrahman/udacity-aws-project03)
