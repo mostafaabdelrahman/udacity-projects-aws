@@ -28,4 +28,4 @@ CloudFront endpoint URL for the website:	http://udacity-website-mostafaahmed.s3.
 
 
 ## Test CircleCI status badge
-[![mostafaabdelrahman](https://circleci.com/gh/mostafaabdelrahman/udacity-aws-project03.svg?style=svg)](https://https://circleci.com/gh/mostafaabdelrahman/udacity-aws-project03)
+[![mostafaabdelrahman](https://circleci.com/gh/mostafaabdelrahman/udacity-aws-project03.svg?style=svg)](https://app.circleci.com/pipelines/gh/mostafaabdelrahman/udacity-aws-project03)
