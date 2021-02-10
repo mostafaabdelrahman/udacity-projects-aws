@@ -220,6 +220,34 @@ Resources:
             VpcId: 
                 Fn::ImportValue: !Sub "${EnvironmentName}-VPCID"
 
+
+
+    # myScaleOutPolicy:
+    #     Type: AWS::AutoScaling::ScalingPolicy
+    #     Properties:
+    #         AdjustmentType: ChangeInCapacity
+    #         AutoScalingGroupName: !Ref logicalName
+    #         ScalingAdjustment: '1'
+
+    # CPUAlarmHigh:
+    #     Type: AWS::CloudWatch::Alarm
+    #     Properties:
+    #         EvaluationPeriods: '1'
+    #         Statistic: Average
+    #         Threshold: '4'
+    #         AlarmDescription: Alarm if AutoScaling Group below DesiredCapacity
+    #         Period: '60'
+    #         AlarmActions:
+    #         - !Ref myScaleOutPolicy
+    #         Namespace: AWS/EC2
+    #         Dimensions:
+    #         - Name: AutoScalingGroupName
+    #         Value:
+    #             Ref: logicalName
+    #         ComparisonOperator: GreaterThanThreshold
+    #         MetricName: CPUUtilization
+
+
 Outputs:
 
     BastionHost1:
